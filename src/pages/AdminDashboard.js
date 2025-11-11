@@ -1,126 +1,77 @@
-import React, { useState, useEffect } from "react";
-import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import { useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import Chart from "chart.js/auto";
 
 export default function AdminDashboard() {
-  const [filter, setFilter] = useState("All");
-  const [transactions, setTransactions] = useState([]);
-  const [showChart, setShowChart] = useState(false);
+  const navigate = useNavigate();
+  const chartRef = useRef(null);
+  const chartInstanceRef = useRef(null);
 
   useEffect(() => {
-    // Mock data for demo
-    setTransactions([
-      { id: 1, name: "John Doe", type: "Payment", amount: 200, status: "Paid" },
-      { id: 2, name: "Jane Smith", type: "Refund", amount: 50, status: "Refunded" },
-      { id: 3, name: "Alice Brown", type: "Payment", amount: 400, status: "Pending" },
-    ]);
+    const ctx = chartRef.current.getContext("2d");
+
+    // Destroy any existing chart instance before creating a new one
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy();
+    }
+
+    const newChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Paid", "Refunded", "Pending"],
+        datasets: [
+          {
+            label: "Transactions",
+            data: [12, 5, 3],
+            backgroundColor: ["#22c55e", "#3b82f6", "#facc15"],
+            borderRadius: 10,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: "Transaction Overview",
+            color: "#2563eb",
+            font: { size: 18, weight: "bold" },
+          },
+        },
+      },
+    });
+
+    chartInstanceRef.current = newChart;
+
+    // Cleanup when the component unmounts
+    return () => {
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+      }
+    };
   }, []);
 
-  const filteredTransactions =
-    filter === "All"
-      ? transactions
-      : transactions.filter((t) => t.status === filter);
-
-  const chartData = {
-    labels: ["Paid", "Refunded", "Pending"],
-    datasets: [
-      {
-        label: "Transaction Count",
-        data: [
-          transactions.filter((t) => t.status === "Paid").length,
-          transactions.filter((t) => t.status === "Refunded").length,
-          transactions.filter((t) => t.status === "Pending").length,
-        ],
-        backgroundColor: ["#22c55e", "#3b82f6", "#eab308"],
-      },
-    ],
-  };
-
   return (
-    <div className="container mt-4">
-      {/* Navbar with Status Tabs */}
-      <nav className="navbar navbar-light bg-white shadow-sm mb-4 rounded p-3 justify-content-center">
-        <div className="btn-group" role="group">
-          <button
-            className={`btn ${filter === "All" ? "btn-dark" : "btn-outline-dark"}`}
-            onClick={() => setFilter("All")}
-          >
-            All
-          </button>
-          <button
-            className={`btn ${filter === "Paid" ? "btn-success" : "btn-outline-success"}`}
-            onClick={() => setFilter("Paid")}
-          >
-            Paid
-          </button>
-          <button
-            className={`btn ${filter === "Refunded" ? "btn-primary" : "btn-outline-primary"}`}
-            onClick={() => setFilter("Refunded")}
-          >
-            Refunded
-          </button>
-          <button
-            className={`btn ${filter === "Pending" ? "btn-warning" : "btn-outline-warning"}`}
-            onClick={() => setFilter("Pending")}
-          >
-            Pending
-          </button>
-        </div>
-      </nav>
+    <div className="container mt-5 text-center">
+      <h2 className="fw-bold text-primary mb-4">Admin Dashboard</h2>
 
-      {/* Transactions Table */}
-      <div className="card shadow-sm p-3 mb-4">
-        <h5 className="fw-bold mb-3">{filter} Transactions</h5>
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Patient Name</th>
-              <th>Type</th>
-              <th>Amount (₹)</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTransactions.map((t) => (
-              <tr key={t.id}>
-                <td>{t.id}</td>
-                <td>{t.name}</td>
-                <td>{t.type}</td>
-                <td>{t.amount}</td>
-                <td>{t.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Refund Page Redirect Button */}
+      <button
+        className="btn btn-outline-success mb-4 px-4"
+        onClick={() => navigate("/refund")}
+      >
+        Go to Refund Page
+      </button>
+
+      {/* Chart Section */}
+      <div
+        className="card p-4 shadow-lg border-0 rounded-4 mx-auto"
+        style={{ maxWidth: "700px", height: "400px" }}
+      >
+        <canvas ref={chartRef}></canvas>
       </div>
-
-      {/* View Analytics Button */}
-      <div className="text-center">
-        <button
-          className="btn btn-outline-primary"
-          onClick={() => setShowChart(!showChart)}
-        >
-          {showChart ? "Hide Analytics" : "View Analytics"}
-        </button>
-      </div>
-
-      {/* Chart (Visible only when toggled) */}
-      {showChart && (
-        <div className="card shadow-sm p-3 mt-4">
-          <h5 className="fw-bold mb-3">Transaction Analytics</h5>
-          <Bar data={chartData} />
-        </div>
-      )}
     </div>
   );
 }
