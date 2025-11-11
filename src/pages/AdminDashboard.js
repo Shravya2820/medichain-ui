@@ -1,76 +1,94 @@
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useRef } from "react";
-import Chart from "chart.js/auto";
 
 export default function AdminDashboard() {
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [paidTransactions, setPaidTransactions] = useState([]);
   const navigate = useNavigate();
-  const chartRef = useRef(null);
-  const chartInstanceRef = useRef(null);
 
   useEffect(() => {
-    const ctx = chartRef.current.getContext("2d");
+    const pending = JSON.parse(localStorage.getItem("paymentRequests") || "[]");
+    const paid = JSON.parse(localStorage.getItem("paidPayments") || "[]");
 
-    // Destroy any existing chart instance before creating a new one
-    if (chartInstanceRef.current) {
-      chartInstanceRef.current.destroy();
-    }
-
-    const newChart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["Paid", "Refunded", "Pending"],
-        datasets: [
-          {
-            label: "Transactions",
-            data: [12, 5, 3],
-            backgroundColor: ["#22c55e", "#3b82f6", "#facc15"],
-            borderRadius: 10,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: {
-            display: true,
-            text: "Transaction Overview",
-            color: "#2563eb",
-            font: { size: 18, weight: "bold" },
-          },
-        },
-      },
-    });
-
-    chartInstanceRef.current = newChart;
-
-    // Cleanup when the component unmounts
-    return () => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
-      }
-    };
+    setPendingRequests(pending);
+    setPaidTransactions(paid);
   }, []);
 
   return (
-    <div className="container mt-5 text-center">
-      <h2 className="fw-bold text-primary mb-4">Admin Dashboard</h2>
+    <div className="container mt-5" style={{ maxWidth: 900 }}>
+      <h2 className="fw-bold mb-4 text-center">Admin Dashboard</h2>
 
-      {/* Refund Page Redirect Button */}
-      <button
-        className="btn btn-outline-success mb-4 px-4"
-        onClick={() => navigate("/refund")}
-      >
-        Go to Refund Page
-      </button>
+      {/* ===== ACTION BUTTONS ===== */}
+      <div className="d-flex justify-content-center gap-3 mb-4">
+        <button className="btn btn-primary" onClick={() => navigate("/admin-request")}>
+          + Send Payment Request
+        </button>
 
-      {/* Chart Section */}
-      <div
-        className="card p-4 shadow-lg border-0 rounded-4 mx-auto"
-        style={{ maxWidth: "700px", height: "400px" }}
-      >
-        <canvas ref={chartRef}></canvas>
+        <button className="btn btn-secondary" onClick={() => navigate("/refund")}>
+          Refund Center
+        </button>
+      </div>
+
+      {/* ===== PENDING REQUESTS ===== */}
+      <div className="card p-4 shadow-sm mb-5">
+        <h4 className="mb-3">⏳ Pending Payment Requests</h4>
+
+        {pendingRequests.length === 0 ? (
+          <p className="text-muted">No pending requests.</p>
+        ) : (
+          pendingRequests.map((r) => (
+            <div
+              key={r.id}
+              className="d-flex justify-content-between align-items-center p-3 mb-2 border rounded"
+            >
+              <div>
+                <strong>{r.patient}</strong> — {r.service}
+                <div className="text-muted small">
+                  Amount: ₹{r.amount} • {new Date(r.createdAt).toLocaleString()}
+                </div>
+              </div>
+
+              {/* Open Patient Payment Page */}
+              <button
+                className="btn btn-sm btn-outline-success"
+                onClick={() => navigate("/pay")}
+              >
+                Request Awaiting Payment →
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ===== PAID TRANSACTIONS ===== */}
+      <div className="card p-4 shadow-sm">
+        <h4 className="mb-3">✅ Completed Payments</h4>
+
+        {paidTransactions.length === 0 ? (
+          <p className="text-muted">No payments completed yet.</p>
+        ) : (
+          paidTransactions.map((r) => (
+            <div
+              key={r.id}
+              className="p-3 mb-2 border rounded"
+              style={{ background: "#f3fff4" }}
+            >
+              <div>
+                <strong>{r.patient}</strong> paid for {r.service}
+              </div>
+              <div className="text-muted small">
+                Base Amount: ₹{r.amount}
+                {r.feeAmount && <> • Fee: ₹{r.feeAmount.toFixed(2)}</>}
+                <br />
+                <strong>Total Paid: ₹{r.totalAmount?.toFixed?.(2) ?? r.amount}</strong>
+                <br />
+                Payment ID: {r.paymentId || "N/A"}
+                <br />
+                Paid on: {new Date(r.paidAt).toLocaleString()}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
