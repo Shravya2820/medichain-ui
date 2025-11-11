@@ -4,7 +4,6 @@ import PatientPay from "./pages/PatientPay";
 import AdminDashboard from "./pages/AdminDashboard";
 import RefundPage from "./pages/AdminRefund";
 
-
 export default function App() {
   return (
     <BrowserRouter>
