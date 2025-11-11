@@ -1,16 +1,34 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Login({ onLogin }) {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("patient");
+  const navigate = useNavigate();
 
   const handleLogin = () => {
-    onLogin(role);
+    if (!email) {
+      alert("Please enter your email.");
+      return;
+    }
+
+    // ✅ Store role locally so other pages can use it (temporary until backend login)
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userEmail", email);
+
+    // ✅ Redirect based on role
+    if (role === "patient") {
+      navigate("/pay");
+    } else {
+      navigate("/admin");
+    }
   };
 
   return (
-    <div className="container d-flex flex-column justify-content-center align-items-center" style={{ height: "100vh" }}>
-      <h1 className="mb-4 fw-bold">MediChainPay Login</h1>
+    <div className="container d-flex flex-column justify-content-center align-items-center"
+      style={{ height: "100vh" }}>
+      
+      <h1 className="mb-4 fw-bold text-primary">MediChainPay Login</h1>
 
       <input
         type="email"

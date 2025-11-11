@@ -1,24 +1,28 @@
-import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import PatientPay from "./pages/PatientPay";
-import AdminRefund from "./pages/AdminRefund";
 import AdminDashboard from "./pages/AdminDashboard";
+import RefundPage from "./pages/AdminRefund";
 
-function App() {
-  const [role, setRole] = useState(null);
 
-  if (!role) return <Login onLogin={setRole} />;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
 
-  if (role === "patient") return <PatientPay />;
-  if (role === "admin")
-    return (
-      <>
-        <AdminDashboard />
-        <AdminRefund />
-      </>
-    );
+        {/* Default Login Page */}
+        <Route path="/" element={<Login />} />
 
-  return null;
+        {/* Patient Payment Page */}
+        <Route path="/pay" element={<PatientPay />} />
+
+        {/* Admin Dashboard */}
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Refund Page */}
+        <Route path="/refund" element={<RefundPage />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
 }
-
-export default App;
