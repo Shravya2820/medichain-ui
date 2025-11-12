@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -7,11 +7,13 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const pending = JSON.parse(localStorage.getItem("paymentRequests") || "[]");
-    const paid = JSON.parse(localStorage.getItem("paidPayments") || "[]");
+    // Load pending list
+    const reqList = JSON.parse(localStorage.getItem("paymentRequests") || "[]");
+    setPendingRequests(reqList);
 
-    setPendingRequests(pending);
-    setPaidTransactions(paid);
+    // Load completed list
+    const paidList = JSON.parse(localStorage.getItem("paidPayments") || "[]");
+    setPaidTransactions(paidList);
   }, []);
 
   return (
@@ -29,7 +31,7 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* ===== PENDING REQUESTS ===== */}
+      {/* ===== PENDING PAYMENT REQUESTS ===== */}
       <div className="card p-4 shadow-sm mb-5">
         <h4 className="mb-3">⏳ Pending Payment Requests</h4>
 
@@ -44,47 +46,42 @@ export default function AdminDashboard() {
               <div>
                 <strong>{r.patient}</strong> — {r.service}
                 <div className="text-muted small">
-                  Amount: ₹{r.amount} • {new Date(r.createdAt).toLocaleString()}
+                  ₹{r.amount} • {new Date(r.createdAt).toLocaleString()}
                 </div>
               </div>
 
-              {/* Open Patient Payment Page */}
               <button
                 className="btn btn-sm btn-outline-success"
-                onClick={() => navigate("/pay")}
+                onClick={() => {
+                  localStorage.setItem("activePaymentRequest", JSON.stringify(r));
+                  navigate("/pay");
+                }}
               >
-                Request Awaiting Payment →
+                Pay Page →
               </button>
             </div>
           ))
         )}
       </div>
 
-      {/* ===== PAID TRANSACTIONS ===== */}
+      {/* ===== COMPLETED PAYMENTS SECTION ===== */}
       <div className="card p-4 shadow-sm">
         <h4 className="mb-3">✅ Completed Payments</h4>
 
         {paidTransactions.length === 0 ? (
-          <p className="text-muted">No payments completed yet.</p>
+          <p className="text-muted">No payments made yet.</p>
         ) : (
-          paidTransactions.map((r) => (
+          paidTransactions.map((p) => (
             <div
-              key={r.id}
+              key={p.id}
               className="p-3 mb-2 border rounded"
-              style={{ background: "#f3fff4" }}
+              style={{ background: "#f8fff9" }}
             >
-              <div>
-                <strong>{r.patient}</strong> paid for {r.service}
-              </div>
+              <strong>{p.patient}</strong> paid for {p.service}
               <div className="text-muted small">
-                Base Amount: ₹{r.amount}
-                {r.feeAmount && <> • Fee: ₹{r.feeAmount.toFixed(2)}</>}
-                <br />
-                <strong>Total Paid: ₹{r.totalAmount?.toFixed?.(2) ?? r.amount}</strong>
-                <br />
-                Payment ID: {r.paymentId || "N/A"}
-                <br />
-                Paid on: {new Date(r.paidAt).toLocaleString()}
+                Amount: ₹{p.totalAmount.toFixed(2)} (Fee: ₹{p.feeAmount.toFixed(2)}) <br />
+                Payment ID: {p.paymentId} <br />
+                Paid: {new Date(p.paidAt).toLocaleString()}
               </div>
             </div>
           ))

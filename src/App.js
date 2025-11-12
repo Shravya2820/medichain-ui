@@ -1,32 +1,33 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Login from "./pages/Login";
-import PatientPay from "./pages/PatientPay";
 import AdminDashboard from "./pages/AdminDashboard";
-import RefundPage from "./pages/AdminRefund";
-import AdminRequest from "./pages/AdminRequest";   // ✅ renamed
-import PatientRequests from "./pages/PatientRequests"; // ✅ ensure this exists
+import AdminRequest from "./pages/AdminRequest"; // Admin sends payment request
+import PatientRequests from "./pages/PatientRequests"; // Patient sees request list
+import PatientPay from "./pages/PatientPay"; // Patient pays selected request
+import RefundPage from "./pages/AdminRefund"; // Refund center
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Default Login Page */}
+        {/* Login */}
         <Route path="/" element={<Login />} />
 
         {/* Admin Dashboard */}
         <Route path="/admin" element={<AdminDashboard />} />
 
-        {/* Admin sends payment request */}
-        <Route path="/admin-request" element={<AdminRequest />} />   {/* ✅ updated */}
+        {/* Admin: Send Payment Request */}
+        <Route path="/admin-request" element={<AdminRequest />} />
 
-        {/* Patient views and confirms requests */}
-        <Route path="/patient-requests" element={<PatientRequests />} />  {/* ✅ */}
+        {/* Patient: View pending requests */}
+        <Route path="/patient-requests" element={<PatientRequests />} />
 
-        {/* Patient Payment Page */}
+        {/* Patient: Confirm & Pay */}
         <Route path="/pay" element={<PatientPay />} />
 
-        {/* Refund Page */}
+        {/* Admin: Refund Center */}
         <Route path="/refund" element={<RefundPage />} />
 
       </Routes>
