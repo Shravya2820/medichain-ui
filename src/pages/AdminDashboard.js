@@ -16,6 +16,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 export default function AdminDashboard() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [paidPayments, setPaidPayments] = useState([]);
+  const [chainInfo, setChainInfo] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,17 +27,24 @@ export default function AdminDashboard() {
     setPaidPayments(paid);
   }, []);
 
-  // KPI Stats
+  // 🔹 Fetch blockchain info from backend
+  useEffect(() => {
+    fetch("http://127.0.0.1:5000/")
+      .then((res) => res.json())
+      .then((data) => setChainInfo(data))
+      .catch((err) => console.error("Blockchain info fetch error:", err));
+  }, []);
+
+  // KPI calculations
   const totalRevenue = paidPayments.reduce((sum, p) => sum + p.totalAmount, 0);
   const totalFee = paidPayments.reduce((sum, p) => sum + p.feeAmount, 0);
   const totalPayments = paidPayments.length;
 
-  // Bar Chart (Payments Count)
+  // Charts
   const serviceCounts = paidPayments.reduce((acc, p) => {
     acc[p.service] = (acc[p.service] || 0) + 1;
     return acc;
   }, {});
-
   const barColors = ["#4f46e5", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#a855f7"];
 
   const barData = {
@@ -52,18 +60,16 @@ export default function AdminDashboard() {
     ],
   };
 
-  // Pie Chart (Revenue Share)
   const serviceRevenue = paidPayments.reduce((acc, p) => {
     acc[p.service] = (acc[p.service] || 0) + p.totalAmount;
     return acc;
   }, {});
-
   const pieData = {
     labels: Object.keys(serviceRevenue),
     datasets: [
       {
         data: Object.values(serviceRevenue),
-        backgroundColor: ["#4f46e5", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#a855f7"],
+        backgroundColor: barColors,
       },
     ],
   };
@@ -72,18 +78,32 @@ export default function AdminDashboard() {
     <div className="container mt-5" style={{ maxWidth: 1100 }}>
       <h2 className="fw-bold text-center mb-4">Admin Dashboard</h2>
 
-      {/* ACTION BUTTONS */}
+      {/* Buttons */}
       <div className="d-flex justify-content-center gap-3 mb-4">
         <button className="btn btn-primary" onClick={() => navigate("/admin-request")}>
           + Send Payment Request
         </button>
-
         <button className="btn btn-secondary" onClick={() => navigate("/refund")}>
           Refund Center
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* Blockchain Analytics */}
+      <div className="card shadow-sm p-4 mb-4 border-success">
+        <h4 className="text-center text-success mb-3">🔗 Blockchain Analytics</h4>
+        {chainInfo ? (
+          <div className="text-center">
+            <p><strong>Status:</strong> {chainInfo.blockchain_status}</p>
+            <p><strong>Latest Block:</strong> {chainInfo.latest_block}</p>
+            <p><strong>Contract Address:</strong> {chainInfo.contract_address}</p>
+            <p className="text-muted small">Last Updated: {new Date(chainInfo.server_time_utc).toLocaleString()}</p>
+          </div>
+        ) : (
+          <p className="text-center text-muted">Fetching blockchain data...</p>
+        )}
+      </div>
+
+      {/* KPIs */}
       <div className="row text-center mb-4">
         <div className="col card shadow-sm p-3 mx-2">
           <h5>Total Revenue</h5>
@@ -99,7 +119,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Analytics Charts */}
+      {/* Charts */}
       <div className="card shadow-sm p-4 mb-4">
         <h4 className="text-center mb-4">📊 Analytics Overview</h4>
         <div className="row">
@@ -107,28 +127,11 @@ export default function AdminDashboard() {
             <h6 className="text-center">Payments per Service</h6>
             <Bar data={barData} />
           </div>
-
           <div className="col-md-6">
             <h6 className="text-center">Revenue Distribution</h6>
             <Pie data={pieData} />
           </div>
         </div>
-      </div>
-
-      {/* Pending Requests */}
-      <div className="card p-4 shadow-sm mb-4">
-        <h4 className="mb-3">⏳ Pending Payment Requests</h4>
-        {pendingRequests.length === 0 ? (
-          <p className="text-muted">No pending requests.</p>
-        ) : (
-          pendingRequests.map((r) => (
-            <div key={r.id} className="d-flex justify-content-between p-2 border rounded mb-2">
-              <div>
-                <strong>{r.patient}</strong> — {r.service} (₹{r.amount})
-              </div>
-            </div>
-          ))
-        )}
       </div>
 
       {/* Completed Payments */}
