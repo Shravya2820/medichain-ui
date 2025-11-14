@@ -5,8 +5,9 @@ export default function AdminRefund() {
   const [selectedTab, setSelectedTab] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
+  const [refundAmount, setRefundAmount] = useState("");
 
-  // Mock data for now — replace with backend later
+  // Mock data — replace with backend API later
   const [transactions, setTransactions] = useState([
     { id: "TXN1001", name: "John Doe", service: "Consultation", amount: 250, status: "Paid" },
     { id: "TXN1002", name: "Jane Smith", service: "Diagnostics", amount: 400, status: "Refunded" },
@@ -25,23 +26,37 @@ export default function AdminRefund() {
 
   const handleRefundClick = (tx) => {
     setSelectedTx(tx);
+    setRefundAmount(""); // reset field
     setShowModal(true);
   };
 
   const confirmRefund = () => {
-    if (selectedTx) {
-      const updated = transactions.map((tx) =>
-        tx.id === selectedTx.id ? { ...tx, status: "Refunded" } : tx
-      );
-      setTransactions(updated);
-      setShowModal(false);
-      alert(`✅ Refund processed for ${selectedTx.name}`);
+    if (!selectedTx) return;
+
+    const amountToRefund = parseFloat(refundAmount);
+    if (isNaN(amountToRefund) || amountToRefund <= 0 || amountToRefund > selectedTx.amount) {
+      alert("⚠️ Please enter a valid refund amount.");
+      return;
     }
+
+    let newStatus = "Refunded";
+    if (amountToRefund < selectedTx.amount) newStatus = "Partially Refunded";
+
+    const updated = transactions.map((tx) =>
+      tx.id === selectedTx.id
+        ? { ...tx, status: newStatus, refundedAmount: amountToRefund }
+        : tx
+    );
+    setTransactions(updated);
+    setShowModal(false);
+    alert(`✅ ${newStatus} processed for ${selectedTx.name} — ₹${amountToRefund}`);
   };
 
   return (
     <div className="container mt-5" style={{ maxWidth: "900px" }}>
-      <h2 className="fw-bold mb-4 text-primary text-center">Admin Refund Portal</h2>
+      <h2 className="fw-bold mb-4 text-primary text-center">
+        Admin Refund Portal
+      </h2>
 
       {/* Search Bar */}
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -57,7 +72,7 @@ export default function AdminRefund() {
 
       {/* Tabs */}
       <ul className="nav nav-tabs mb-3">
-        {["All", "Paid", "Refunded", "Pending"].map((tab) => (
+        {["All", "Paid", "Partially Refunded", "Refunded", "Pending"].map((tab) => (
           <li className="nav-item" key={tab}>
             <button
               className={`nav-link ${selectedTab === tab ? "active fw-bold" : ""}`}
@@ -102,7 +117,9 @@ export default function AdminRefund() {
                         ? "bg-success"
                         : tx.status === "Refunded"
                         ? "bg-info"
-                        : "bg-warning text-dark"
+                        : tx.status === "Partially Refunded"
+                        ? "bg-warning text-dark"
+                        : "bg-secondary"
                     }`}
                   >
                     {tx.status}
@@ -124,7 +141,7 @@ export default function AdminRefund() {
         </tbody>
       </table>
 
-      {/* Modal */}
+      {/* Refund Modal */}
       {showModal && (
         <div
           className="modal fade show"
@@ -133,7 +150,7 @@ export default function AdminRefund() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title text-danger">Confirm Refund</h5>
+                <h5 className="modal-title text-danger">Process Refund</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -141,9 +158,17 @@ export default function AdminRefund() {
                 ></button>
               </div>
               <div className="modal-body">
-                Are you sure you want to refund{" "}
-                <strong>₹{selectedTx?.amount}</strong> for{" "}
-                <strong>{selectedTx?.name}</strong>?
+                <p>
+                  Enter refund amount for <strong>{selectedTx?.name}</strong> (
+                  Total: ₹{selectedTx?.amount})
+                </p>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Enter partial or full refund amount"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                />
               </div>
               <div className="modal-footer">
                 <button
